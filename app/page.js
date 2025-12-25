@@ -3,37 +3,30 @@
 import { upload } from '@vercel/blob/client';
 import { useState, useRef, useEffect } from 'react';
 
-export default function Dashboard() {
+export default function BJ_Uploader() {
   const fileInputRef = useRef(null);
   const [currentFile, setCurrentFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [shortUrl, setShortUrl] = useState('');
-  const [stats, setStats] = useState({ total: 0, size: 0 });
-  const [history, setHistory] = useState([]);
   const [showResponse, setShowResponse] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
-  // Load Data
+  // Show Telegram Popup after 3 seconds
   useEffect(() => {
-    const s = JSON.parse(localStorage.getItem('hs_stats')) || { total: 0, size: 0 };
-    const h = JSON.parse(localStorage.getItem('hs_history')) || [];
-    setStats(s);
-    setHistory(h);
+    const timer = setTimeout(() => {
+      if (!localStorage.getItem('popupClosed')) {
+        setShowPopup(true);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
   }, []);
-
-  const formatSize = (bytes) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Error: File 10MB se badi hai!");
+    if (file.size > 10 * 1024 * 1024) { // 10MB Limit
+      alert("Error: File is too large! Maximum limit is 10MB.");
       e.target.value = '';
       return;
     }
@@ -41,7 +34,7 @@ export default function Dashboard() {
     setShowResponse(false);
   };
 
-  const uploadNow = async () => {
+  const uploadFile = async () => {
     if (!currentFile) return;
     setLoading(true);
 
@@ -56,16 +49,6 @@ export default function Dashboard() {
       });
 
       const finalUrl = `https://b-jh.vercel.app/f/${newBlob.url.split('/').pop()}`;
-
-      // Update Local State & Storage
-      const newStats = { ...stats, total: stats.total + 1, size: stats.size + currentFile.size };
-      const newHistory = [{ name: secureName, url: finalUrl, size: currentFile.size, date: new Date() }, ...history].slice(0, 10);
-
-      localStorage.setItem('hs_stats', JSON.stringify(newStats));
-      localStorage.setItem('hs_history', JSON.stringify(newHistory));
-
-      setStats(newStats);
-      setHistory(newHistory);
       setShortUrl(finalUrl);
       setShowResponse(true);
       setCurrentFile(null);
@@ -77,125 +60,184 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container">
-      <style jsx global>{`
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body {
-          background-color: #0f172a;
-          background-image: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
-          color: #f8fafc;
-          min-height: 100vh;
-          padding: 15px;
-        }
-        .container { max-width: 1000px; margin: 0 auto; padding-bottom: 50px; }
-        header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
-        .logo {
-          font-size: 2.2rem; font-weight: 800;
-          background: linear-gradient(135deg, #6366f1, #ec4899);
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 25px; }
-        .stat-card { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 16px; text-align: center; }
-        .upload-wrapper { background: #1e293b; border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
-        .upload-area { border: 2px dashed rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); border-radius: 16px; padding: 30px; text-align: center; cursor: pointer; }
-        .btn-main { padding: 12px 25px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; color: white; background: #4f46e5; display: inline-flex; gap: 8px; align-items: center; }
-        .progress-bar { height: 8px; background: linear-gradient(90deg, #4f46e5, #ec4899); width: 100%; animation: pulse 1.5s infinite; border-radius: 4px; }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-        .recent-item { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-        .tag { background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 50px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1); }
-      `}</style>
+    <div className="bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800 antialiased font-mono min-h-screen">
+      
+      {/* Telegram Popup */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black/50 z-[10000] flex items-center justify-center p-4">
+          <div className="bg-white p-6 border border-gray-200 rounded-none max-w-sm w-full text-center shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Join Our Community!</h3>
+            <p className="text-sm text-gray-600 mb-6">Connect with us on Telegram for updates and support.</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { window.open('https://t.me/BJ_DEVS', '_blank'); setShowPopup(false); }}
+                className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold"
+              >Open Link</button>
+              <button 
+                onClick={() => { setShowPopup(false); localStorage.setItem('popupClosed', 'true'); }}
+                className="flex-1 bg-gray-50 text-gray-900 border border-gray-200 py-3 rounded-lg font-bold"
+              >Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <header>
-        <div className="logo">BJDEVS Hosting</div>
-        <div style={{ color: '#94a3b8' }}>Professional File Distribution</div>
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 py-5">
+        <div className="max-w-2xl mx-auto px-6 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <i className="fas fa-cloud-upload-alt text-slate-900 text-xl"></i>
+            <h1 className="text-xl font-bold text-slate-900">BJ Cloud Uploader</h1>
+          </div>
+          <a href="https://t.me/bj_Devs" target="_blank" className="text-slate-600 hover:text-slate-900">
+            <i className="fab fa-telegram-plane text-xl"></i>
+          </a>
+        </div>
       </header>
 
-      {/* Stats */}
-      <div className="stats-container">
-        <div className="stat-card"><h3>{stats.total}</h3><p style={{fontSize:'0.7rem', color:'#94a3b8'}}>FILES</p></div>
-        <div className="stat-card"><h3>{new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short'})}</h3><p style={{fontSize:'0.7rem', color:'#94a3b8'}}>TODAY</p></div>
-        <div className="stat-card"><h3>{formatSize(stats.size)}</h3><p style={{fontSize:'0.7rem', color:'#94a3b8'}}>USED</p></div>
-        <div className="stat-card"><h3>Active</h3><p style={{fontSize:'0.7rem', color:'#94a3b8'}}>STATUS</p></div>
-      </div>
+      {/* Main Content */}
+      <main className="max-w-2xl mx-auto px-6 py-10">
+        
+        {/* Intro */}
+        <section className="text-center mb-8">
+          <p className="text-slate-600 text-xs mb-2 uppercase tracking-widest">Professional File Distribution</p>
+          <h2 className="text-3xl font-bold text-slate-900">Secure Global Storage</h2>
+          <p className="mt-2 text-slate-700 text-sm">Upload files up to 10MB and get instant short links.</p>
+        </section>
 
-      {/* Upload Box */}
-      <div className="upload-wrapper">
-        {!currentFile && !loading && (
-          <div className="upload-area" onClick={() => fileInputRef.current.click()}>
-            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>☁️</div>
-            <div style={{ fontWeight: '700', marginBottom: '15px' }}>Upload Your Files</div>
-            <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginBottom: '20px' }}>Max 10MB • All Formats</p>
-            <button className="btn-main">📂 Browse Files</button>
-            <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} />
-          </div>
-        )}
-
-        {currentFile && !loading && (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', marginBottom: '15px', display:'flex', alignItems:'center', gap:'10px' }}>
-              <span style={{fontSize:'1.5rem'}}>📄</span>
-              <div style={{textAlign:'left'}}><div style={{fontWeight:'600'}}>{currentFile.name}</div><div style={{fontSize:'0.8rem', color:'#94a3b8'}}>{formatSize(currentFile.size)}</div></div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setCurrentFile(null)} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={uploadNow} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: '#10b981', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Upload</button>
-            </div>
-          </div>
-        )}
-
-        {loading && (
-          <div style={{ padding: '20px', textAlign: 'center' }}>
-            <div style={{ marginBottom: '10px' }}>Uploading to BJDEVS Cloud...</div>
-            <div className="progress-bar"></div>
-          </div>
-        )}
-      </div>
-
-      {/* Success Response */}
-      {showResponse && (
-        <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px', padding: '20px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-            <span style={{ color: '#10b981', fontWeight: '800' }}>✅ Upload Successful</span>
-            <button onClick={() => setShowResponse(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>✖</button>
-          </div>
-          <input readOnly value={shortUrl} style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'white', marginBottom: '15px' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <button onClick={() => { navigator.clipboard.writeText(shortUrl); alert("Copied!"); }} style={{ background: '#4f46e5', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>📋 Copy URL</button>
-            <a href={shortUrl} target="_blank" rel="noreferrer" style={{ background: '#10b981', color: 'white', textAlign: 'center', padding: '10px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>🔗 Open File</a>
-          </div>
-        </div>
-      )}
-
-      {/* Recent Files */}
-      {history.length > 0 && (
-        <div className="upload-wrapper">
-          <div style={{ marginBottom: '15px', fontWeight: '700' }}>🕒 Recent Uploads</div>
-          {history.map((item, idx) => (
-            <div key={idx} className="recent-item">
-              <span style={{ fontSize: '1.2rem' }}>📄</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>{item.name}</div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{formatSize(item.size)}</div>
+        {/* Uploader Card */}
+        <div className="bg-white border border-gray-200 p-6 rounded-none mb-6 hover:border-gray-400 transition-all">
+          <div className="space-y-5">
+            
+            {/* File Selection Area */}
+            {!loading && (
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Select Your File</label>
+                <div 
+                  onClick={() => fileInputRef.current.click()}
+                  className="w-full p-8 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:bg-slate-50 transition"
+                >
+                  {currentFile ? (
+                    <div className="text-slate-900">
+                      <i className="fas fa-file-alt text-2xl mb-2"></i>
+                      <p className="text-sm font-bold">{currentFile.name}</p>
+                      <p className="text-xs text-slate-500">{(currentFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                      <p className="text-sm text-gray-600">Click to browse or drag file here</p>
+                    </div>
+                  )}
+                </div>
+                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
               </div>
-              <button onClick={() => { navigator.clipboard.writeText(item.url); alert("Copied!"); }} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}>📋</button>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
 
-      {/* Info Section */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-        <div className="stat-card" style={{ textAlign: 'left' }}>
-          <h4 style={{ marginBottom: '10px' }}>📖 How to Use</h4>
-          <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.6' }}>1. Select file<br />2. Click Upload<br />3. Get your short link instantly.</p>
-        </div>
-        <div className="stat-card" style={{ textAlign: 'left' }}>
-          <h4 style={{ marginBottom: '10px' }}>✨ Supported</h4>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-            <span className="tag">Images</span><span className="tag">Videos</span><span className="tag">Zips</span><span className="tag">Code</span>
+            {/* Loading State */}
+            {loading && (
+              <div className="py-10 text-center">
+                <i className="fas fa-spinner fa-spin text-3xl text-slate-900 mb-4"></i>
+                <p className="text-sm font-bold">Uploading to BJDEVS Cloud...</p>
+                <div className="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-slate-900 animate-pulse w-full"></div>
+                </div>
+              </div>
+            )}
+
+            {/* Buttons */}
+            {!loading && (
+              <div className="flex gap-3">
+                <button 
+                  onClick={uploadFile}
+                  disabled={!currentFile}
+                  className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 font-medium transition ${currentFile ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                >
+                  <i className="fas fa-upload"></i> Upload Now
+                </button>
+                <button 
+                  onClick={() => { setCurrentFile(null); setShowResponse(false); }}
+                  className="flex-1 bg-white border border-gray-300 hover:border-slate-400 text-slate-900 py-3 rounded-lg flex items-center justify-center gap-2 transition font-medium"
+                >
+                  <i className="fas fa-trash"></i> Clear
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+
+        {/* Result Area */}
+        {showResponse && (
+          <div className="bg-white border-2 border-slate-900 p-6 rounded-none mb-6 animate-[slideDown_0.3s_ease]">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 text-center">File Ready! ✅</h3>
+            <input 
+              readOnly 
+              value={shortUrl} 
+              className="w-full p-3 bg-slate-50 border border-gray-200 rounded-lg text-xs mb-4 text-center focus:outline-none"
+            />
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { navigator.clipboard.writeText(shortUrl); alert("URL Copied!"); }}
+                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition font-medium"
+              >
+                <i className="fas fa-copy"></i> Copy Link
+              </button>
+              <button 
+                onClick={() => window.open(shortUrl, '_blank')}
+                className="flex-1 bg-white border border-gray-300 hover:border-slate-400 text-slate-900 py-3 rounded-lg flex items-center justify-center gap-2 transition font-medium"
+              >
+                <i className="fas fa-external-link-alt"></i> Open
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* How to Use Section */}
+        <div className="bg-white border border-gray-300 p-6 mb-6 rounded-none">
+          <h3 className="flex items-center gap-2 font-bold text-lg text-slate-900 mb-5">
+            <i className="fas fa-bolt"></i> How to Use
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="border-2 border-dashed border-slate-900 text-slate-900 w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-slate-900 mb-1">Choose File</h4>
+                <p className="text-xs text-slate-600">Select any file (Images, Video, Code) under 10MB.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="border-2 border-dashed border-slate-900 text-slate-900 w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-slate-900 mb-1">Click Upload</h4>
+                <p className="text-xs text-slate-600">Our system will generate a secure random ID for your file.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="border-2 border-dashed border-slate-900 text-slate-900 w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold text-sm">3</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-slate-900 mb-1">Share Link</h4>
+                <p className="text-xs text-slate-600">Copy the unique short link and share it anywhere.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-12 text-center text-xs text-slate-600 space-y-1">
+          <p>Thx To All Users And Contributors.</p>
+          <p>© 2025 BJ Cloud. All rights reserved.</p>
+        </footer>
+      </main>
+
+      {/* Donate Button */}
+      <button 
+        onClick={() => window.open('https://t.me/bj_coder', '_blank')}
+        className="fixed bottom-6 right-6 z-30 bg-slate-900 text-white py-3 px-5 rounded-full text-sm font-bold flex items-center gap-2 shadow-2xl hover:bg-slate-800 transition transform hover:scale-105"
+      >
+        <i className="fas fa-hand-holding-heart"></i> Donate
+      </button>
+
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     </div>
   );
 }
