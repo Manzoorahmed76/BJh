@@ -8,6 +8,8 @@ export async function POST(request) {
     const jsonResponse = await handleUpload({
       body,
       request,
+      // Yahan hum aapka specific token assign kar rahe hain
+      token: process.env.BJDEVS_READ_WRITE_TOKEN, 
       onBeforeGenerateToken: async (pathname) => {
         return {
           allowedContentTypes: [
