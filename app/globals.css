@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+::-webkit-scrollbar { display: none !important; }
+
+body {
+  @apply bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800 antialiased font-mono min-h-screen;
+}
+
+.encoder-card {
+  @apply bg-white border border-gray-200 transition-all duration-200;
+}
+.encoder-card:hover { @apply border-gray-400; }
+
+.toast {
+  @apply fixed bottom-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg border font-bold text-sm shadow-xl z-50 transition-all;
+}
