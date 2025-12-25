@@ -18,14 +18,10 @@ export default function Home() {
         boxShadow: '0 4px 20px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px', textAlign: 'center' 
       }}>
         <h2 style={{ color: '#333' }}>BJDEVS Uploader</h2>
-        <p style={{ color: '#666', fontSize: '14px' }}>Images aur ZIP files (Max 20MB+) upload karein</p>
+        <p style={{ color: '#666', fontSize: '14px' }}>Images & ZIP (Max 20MB+)</p>
 
         <div style={{ margin: '25px 0' }}>
-          <input 
-            type="file" 
-            ref={inputFileRef} 
-            style={{ width: '100%', marginBottom: '15px' }}
-          />
+          <input type="file" ref={inputFileRef} style={{ width: '100%', marginBottom: '15px' }} />
           
           <button
             disabled={loading}
@@ -35,12 +31,14 @@ export default function Home() {
               
               setLoading(true);
               try {
+                // Client-side upload logic
                 const newBlob = await upload(file.name, file, {
                   access: 'public',
                   handleUploadUrl: '/api/upload',
                 });
                 setBlob(newBlob);
               } catch (err) {
+                console.error(err);
                 alert("Upload failed: " + err.message);
               } finally {
                 setLoading(false);
@@ -68,7 +66,7 @@ export default function Home() {
                 navigator.clipboard.writeText(blob.url);
                 alert("Link copied!");
               }}
-              style={{ marginTop: '10px', fontSize: '12px', cursor: 'pointer' }}
+              style={{ marginTop: '10px', width: '100%', padding: '8px', cursor: 'pointer' }}
             >
               Copy Link
             </button>
