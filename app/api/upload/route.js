@@ -9,24 +9,15 @@ export async function POST(request) {
       body,
       request,
       token: process.env.BJDEVS_READ_WRITE_TOKEN,
-      onBeforeGenerateToken: async (pathname) => {
-        // Random ID generator
-        const randomId = Math.random().toString(36).substring(2, 10);
-        const extension = pathname.split('.').pop();
-        const newFileName = `${randomId}.${extension}`;
-
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
+        // clientPayload mein hum password receive karenge agar user ne set kiya hoga
         return {
           allowedContentTypes: [
             'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-            'video/mp4', 'video/quicktime', 'video/x-matroska',
-            'application/zip', 'application/x-zip-compressed',
-            'text/plain', 'text/html', 'text/css', 'application/javascript',
-            'application/pdf'
+            'video/mp4', 'application/zip', 'text/plain', 'text/html', 
+            'text/css', 'application/javascript', 'application/pdf'
           ],
-          // Is line se user ka asli naam hat jayega
-          tokenPayload: JSON.stringify({
-             newPath: newFileName 
-          }),
+          tokenPayload: clientPayload, // Password metadata store karne ke liye
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
